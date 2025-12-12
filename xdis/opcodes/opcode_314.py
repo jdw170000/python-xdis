@@ -3,6 +3,7 @@ CPython 3.14 bytecode opcodes
 """
 
 from xdis.opcodes.base import (  # noqa
+    VARYING_STACK_INT,
     binary_op,
     call_op,
     compare_op,
@@ -51,7 +52,7 @@ def_op(loc,     "FORMAT_SIMPLE",                                12,     1,  1)
 def_op(loc,     "FORMAT_WITH_SPEC",                             13,     2,  1)
 def_op(loc,     "GET_AITER",                                    14,     1,  1)
 def_op(loc,     "GET_ANEXT",                                    15,     1,  2)
-def_op(loc,     "GET_ITER",                                     16,     1,  2)
+def_op(loc,     "GET_ITER",                                     16,     0,  0)
 def_op(loc,     "RESERVED",                                     17,     0,  0)
 def_op(loc,     "GET_LEN",                                      18,     1,  2)
 def_op(loc,     "GET_YIELD_FROM_ITER",                          19,     1,  1)
@@ -65,7 +66,7 @@ def_op(loc,     "MATCH_SEQUENCE",                               26,     1,  2)
 def_op(loc,     "NOP",                                          27,     0,  0)
 def_op(loc,     "NOT_TAKEN",                                    28,     0,  0)
 def_op(loc,     "POP_EXCEPT",                                   29,     1,  0)
-def_op(loc,     "POP_ITER",                                     30,     2,  0)
+def_op(loc,     "POP_ITER",                                     30,     1,  0)
 def_op(loc,     "POP_TOP",                                      31,     1,  0)
 def_op(loc,     "PUSH_EXC_INFO",                                32,     1,  2)
 def_op(loc,     "PUSH_NULL",                                    33,     0,  1)
@@ -80,14 +81,14 @@ unary_op(loc,   "UNARY_NEGATIVE",                               41,     1,  1)
 unary_op(loc,   "UNARY_NOT",                                    42,     1,  1)
 def_op(loc,     "WITH_EXCEPT_START",                            43,     5,  6)
 binary_op(loc,  "BINARY_OP",                                    44,     2,  1)
-def_op(loc,     "BUILD_INTERPOLATION",                          45,     2,  1)  # pops 2 + (oparg & 1)
+def_op(loc,     "BUILD_INTERPOLATION",                          45,  VARYING_STACK_INT,  1)  # Either -1 or -2:  pops 2 + (oparg & 1) and pushes result
 varargs_op(loc, "BUILD_LIST",                                   46,     -1, 1)  # TOS is count of list items
 varargs_op(loc, "BUILD_MAP",                                    47,     0,  1)  # argument is dictionary count to be popped
 varargs_op(loc, "BUILD_SET",                                    48,     -1, 1)  # TOS is count of set items
 varargs_op(loc, "BUILD_SLICE",                                  49,     -1, 1)  # TOS is slice
 varargs_op(loc, "BUILD_STRING",                                 50,     -1, 1)  # TOS is concatenated strings
 varargs_op(loc, "BUILD_TUPLE",                                  51,     -1, 1)  # TOS is count of tuple items
-call_op(loc,    "CALL",                                         52,     -2, 1)  # pops 2 + oparg; TOS is return value
+call_op(loc,    "CALL",                                         52,     VARYING_STACK_INT, 2)  # pops 2 + oparg; TOS is return value
 def_op(loc,     "CALL_INTRINSIC_1",                             53,     1,  1)
 def_op(loc,     "CALL_INTRINSIC_2",                             54,     2,  1)
 call_op(loc,    "CALL_KW",                                      55,     -3, 1)  # pops 3 + oparg; TOS is return value
@@ -153,8 +154,8 @@ store_op(loc,   "STORE_FAST_STORE_FAST",                        114,    2,  0, i
 store_op(loc,   "STORE_GLOBAL",                                 115,    1,  0, is_type="name")
 store_op(loc,   "STORE_NAME",                                   116,    1,  0, is_type="name")
 def_op(loc,     "SWAP",                                         117,    0,  0)
-varargs_op(loc, "UNPACK_EX",                                    118,    1, -1)  # pushes 1 + (oparg & 0xFF) + (oparg >> 8)
-varargs_op(loc, "UNPACK_SEQUENCE",                              119,    0, -1)  # unpacks TOS, arg is the count
+varargs_op(loc, "UNPACK_EX",                                    118,    VARYING_STACK_INT, VARYING_STACK_INT)  # pushes 1 + (oparg & 0xFF) + (oparg >> 8)
+varargs_op(loc, "UNPACK_SEQUENCE",                              119,    1, VARYING_STACK_INT)  # unpacks TOS, arg is the count
 def_op(loc,     "YIELD_VALUE",                                  120,    1,  1)
 def_op(loc,     "RESUME",                                       128,    0,  0)
 
@@ -241,21 +242,21 @@ varargs_op(loc, "UNPACK_SEQUENCE_LIST",                         207,    1,  -1)
 varargs_op(loc, "UNPACK_SEQUENCE_TUPLE",                        208,    1,  -1)
 def_op(loc,     "UNPACK_SEQUENCE_TWO_TUPLE",                    209,    1,  2)
 def_op(loc,     "INSTRUMENTED_END_FOR",                         233,    3,  2)
-def_op(loc,     "INSTRUMENTED_POP_ITER",                        234,    2,  0)
+def_op(loc,     "INSTRUMENTED_POP_ITER",                        234,    1,  0)
 def_op(loc,     "INSTRUMENTED_END_SEND",                        235,    2,  1)
-jrel_op(loc,    "INSTRUMENTED_FOR_ITER",                        236,    2,  3, conditional=True)
-def_op(loc,     "INSTRUMENTED_INSTRUCTION",                     237,    0,  0)
+jrel_op(loc,    "INSTRUMENTED_FOR_ITER",                        236,    2,  1, conditional=True)
+def_op(loc,     "INSTRUMENTED_INSTRUCTION",                     237,    0,  1)
 jrel_op(loc,    "INSTRUMENTED_JUMP_FORWARD",                    238,    0,  0, conditional=False)
 def_op(loc,     "INSTRUMENTED_NOT_TAKEN",                       239,    0,  0)
-jrel_op(loc,    "INSTRUMENTED_POP_JUMP_IF_TRUE",                240,    1,  0, conditional=True)
+jrel_op(loc,    "INSTRUMENTED_POP_JUMP_IF_TRUE",                240,    0,  0, conditional=True)  # dunno why it's not 1, 0.
 jrel_op(loc,    "INSTRUMENTED_POP_JUMP_IF_FALSE",               241,    1,  0, conditional=True)
 jrel_op(loc,    "INSTRUMENTED_POP_JUMP_IF_NONE",                242,    1,  0, conditional=True)
 jrel_op(loc,    "INSTRUMENTED_POP_JUMP_IF_NOT_NONE",            243,    1,  0, conditional=True)
-def_op(loc,     "INSTRUMENTED_RESUME",                          244,    0,  0)
+def_op(loc,     "INSTRUMENTED_RESUME",                          244,    1,  0)  # dunno why it's not 0, 0.
 def_op(loc,     "INSTRUMENTED_RETURN_VALUE",                    245,    1,  1)
 def_op(loc,     "INSTRUMENTED_YIELD_VALUE",                     246,    1,  1)
-jrel_op(loc,    "INSTRUMENTED_END_ASYNC_FOR",                   247,    2,  0, conditional=True)
-name_op(loc,    "INSTRUMENTED_LOAD_SUPER_ATTR",                 248,    3,  1)  # pushes 1 + (oparg & 1)
+jrel_op(loc,    "INSTRUMENTED_END_ASYNC_FOR",                   247,    0,  0, conditional=True) # dunnow why it's not 2, 0
+name_op(loc,    "INSTRUMENTED_LOAD_SUPER_ATTR",                 248,    VARYING_STACK_INT,  1)  # pushes 1 + (oparg & 1)
 call_op(loc,    "INSTRUMENTED_CALL",                            249,    -2, 1)
 call_op(loc,    "INSTRUMENTED_CALL_KW",                         250,    -3, 1)
 def_op(loc,     "INSTRUMENTED_CALL_FUNCTION_EX",                251,    4,  1)
@@ -353,7 +354,6 @@ opcode_arg_fmt = opcode_arg_fmt314 = {
 opcode_extended_fmt = opcode_extended_fmt314 = {
     **opcode_313.opcode_extended_fmt313,
     **{"BINARY_OP": extended_BINARY_OP_314},
-    **{"LOAD_COMMON_CONSTANT": format_LOAD_COMMON_CONSTANT_314},
 }
 
 # CALL_FUNCTION_EX no longer takes an argument in 3.14, so it no longer needs to be formatted
